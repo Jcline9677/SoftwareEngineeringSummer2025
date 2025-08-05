@@ -1,0 +1,39 @@
+class User:
+    def __init__(self, username, email):
+        self.username = username
+        self.email = email
+    def VerifyUser(self,username, email):
+        return self.username == username and self.email == email
+    
+
+class Admin(User):
+    def __init__(self, username, email):
+        super().__init__(username, email)
+
+
+
+class DataBase:
+    def __init__(self):
+        self.users = {}
+
+    def add_user(self, user):
+        self.users[user.username] = user
+
+    def remove_user(self, username):
+        self.users.pop(username, None)
+
+        
+
+User1 = User("Justin","1234")
+User2 = User("TEst","1234")
+UserDataBase = DataBase()
+UserDataBase.add_user(User1)
+UserDataBase.add_user(User2)
+print(UserDataBase.users)
+UserDataBase.users["Justin"].VerifyUser("Justin","1234")
+UserDataBase.users["TEst"].VerifyUser("Justin","1234")
+
+
+
+
+
