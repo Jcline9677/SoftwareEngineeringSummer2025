@@ -84,6 +84,9 @@ class Claim:
         self.item_id = item_id
         self.status = "pending"  # pending, approved
 
+
+
+
 # === Controller ===
 class DLFSController:
     """Main controller to manage users, items, and claims"""
@@ -113,9 +116,19 @@ class DLFSController:
         self.save_all()
         return item.item_id  # Return generated item ID
 
-    def search_items(self, keyword):
+
+### ITEM SEARCH FUNCTIONS ###
+    def search_items_name(self, keyword):
         """Search items by keyword in the name"""
         return [item for item in self.items if keyword.lower() in item["name"].lower()]
+    
+    def search_items_location(self, location):
+        """Search items by location"""
+        return [item for item in controller.items if location.lower() in item['location'].lower()]
+    
+    def search_items_type(self, item_description):
+        """Search items by item type (lost or found)""" 
+        return [item for item in controller.items if item_description() in item['item_description'].lower()]
 
     def claim_item(self, user_id, item_id):
         """Submit a claim for a found item"""
@@ -141,138 +154,152 @@ class DLFSController:
 # === Menus ===
 controller = DLFSController()
 
+class DLFSUI:
+    """User Interface for the DLFS system"""
+    def __init__(self, controller):
+        self.controller = controller
+    
+    def print_items(self, results):
+        """Helper function to print a list of items"""
+        if results:
+            print("\n--- Items Found ---")
+            for item in results:
+                print(f"Item ID: {item['item_id']}, Name: {item['name']}, Location: {item['location']}, Type: {item['item_type']}, Status: {item['status']}")
+        else:
+            print("No items found matching this search.")
+       
+            
 
-def user_menu(user):
-    """Menu for regular users"""
-    while True:
-        print("\n--- User Menu ---")
-        print("1. Report Lost Item")
-        print("2. Report Found Item")
-        print("3. Search Items")
-        print("4. Claim an Item")
-        print("5. Logout")
-        choice = input("Choose an option: ")
+    def user_menu(self,user):
+        """Menu for regular users"""
+        while True:
+            print("\n--- User Menu ---")
+            print("1. Report Lost Item")
+            print("2. Report Found Item")
+            print("3. Search Items")
+            print("4. Claim an Item")
+            print("5. Logout")
+            choice = input("Choose an option: ")
 
-        if choice == "1":
-            # Report lost item
-            name = input("Item name: ")
-            desc = input("Description: ")
-            loc = input("Location: ")
-            item_id = controller.report_item(name, desc, loc, "lost", user["id"])
-            print(f"Lost item reported. Item ID: {item_id}")
+            if choice == "1":
+                # Report lost item
+                name = input("Item name: ")
+                desc = input("Description: ")
+                loc = input("Location: ")
+                item_id = controller.report_item(name, desc, loc, "lost", user["id"])
+                print(f"Lost item reported. Item ID: {item_id}")
 
-        elif choice == "2":
-            # Report found item
-            name = input("Item name: ")
-            desc = input("Description: ")
-            loc = input("Location: ")
-            item_id = controller.report_item(name, desc, loc, "found", user["id"])
-            print(f"Found item reported. Item ID: {item_id}")
+            elif choice == "2":
+                # Report found item
+                name = input("Item name: ")
+                desc = input("Description: ")
+                loc = input("Location: ")
+                item_id = controller.report_item(name, desc, loc, "found", user["id"])
+                print(f"Found item reported. Item ID: {item_id}")
 
-        elif choice == "3":
-            # Search menu options
-            print("\n--- Search Menu ---")
-            print("1. View All Items")
-            print("2. Search by Keyword")
-            print("3. Search by Location")
-            print("4. Search by Item Type")
-            sub_choice = input("Choose an option: ")
+            elif choice == "3":
+                # Search menu options
+                print("\n--- Search Menu ---")
+                print("1. View All Items")
+                print("2. Search by Keyword")
+                print("3. Search by Location")
+                print("4. Search by Item Type")
+                sub_choice = input("Choose an option: ")
 
-            if sub_choice == "1":
-                # View all items
-                if controller.items:
-                    print("\n--- All Items ---")
-                    for item in controller.items:
-                        print(f"Item ID: {item['item_id']}, Name: {item['name']}, Location: {item['location']}, Type: {item['item_type']}, Status: {item['status']}")
-                else:
-                    print("No items in the system.")
+                if sub_choice == "1":
+                    # View all items
+                    if controller.items:
+                        print("\n--- All Items ---")
+                        self.print_items(controller.items)                    
+                    else:
+                        print("No items in the system.")
 
-            elif sub_choice == "2":
-                # Search by keyword
-                keyword = input("Enter keyword: ")
-                results = controller.search_items(keyword)
-                if results:
+                elif sub_choice == "2":
+                    # Search by keyword
+                    keyword = input("Enter keyword: ")
+                    results = controller.search_items_name(keyword)
                     print("\n--- Search Results ---")
-                    for item in results:
-                        print(f"Item ID: {item['item_id']}, Name: {item['name']}, Location: {item['location']}, Type: {item['item_type']}, Status: {item['status']}")
+                    
+                elif sub_choice == "3":
+                    # Search by location
+                    location = input("Enter location: ")
+                    results = controller.search_items_location(location)
+                    self.print_items(results)
+
+                elif sub_choice == "4":
+                    # Search by item type (lost or found)
+                    print("Choose type: 1 for Lost, 2 for Found")
+                    t = input("Enter choice: ")
+                    item_type = "lost" if t == "1" else "found"
+                    results = controller.search_items_type(item_type)
+                    self.print_items(results)
+
+            elif choice == "4":
+                # Claim an item
+                item_id = input("Enter Item ID to claim: ")
+                claim_id = controller.claim_item(user["id"], item_id)
+                print(f"Claim submitted. Claim ID: {claim_id}")
+
+            elif choice == "5":
+                # Logout
+                break
+
+
+
+
+
+    def admin_menu(admin):
+        """Menu for admins"""
+        while True:
+            print("\n--- Admin Menu ---")
+            print("1. Approve Claim")
+            print("2. Logout")
+            choice = input("Choose an option: ")
+
+            if choice == "1":
+                claim_id = input("Enter Claim ID: ")
+                if controller.approve_claim(claim_id):
+                    print("Claim approved.")
                 else:
-                    print("No items found with that keyword.")
+                    print("Claim not found.")
+            elif choice == "2":
+                break
 
-            elif sub_choice == "3":
-                # Search by location
-                location = input("Enter location: ")
-                results = [item for item in controller.items if location.lower() in item['location'].lower()]
-                if results:
-                    print("\n--- Items Found in Location ---")
-                    for item in results:
-                        print(f"Item ID: {item['item_id']}, Name: {item['name']}, Location: {item['location']}, Type: {item['item_type']}, Status: {item['status']}")
+
+
+            
+    def main_menu(self):
+        """Main menu for login and exit"""
+        while True:
+            print("\n--- DLFS Main Menu ---")
+            print("1. Login")
+            print("2. Exit")
+            choice = input("Choose an option: ")
+
+            if choice == "1":
+                email = input("Email: ")
+                password = input("Password: ")
+                user = controller.login(email, password)
+                if user:
+                    # Show menu based on role
+                    if user["role"] == "admin":
+                        self.admin_menu(user)
+                    else:
+                        self.user_menu(user)
                 else:
-                    print("No items found in that location.")
-
-            elif sub_choice == "4":
-                # Search by item type (lost or found)
-                print("Choose type: 1 for Lost, 2 for Found")
-                t = input("Enter choice: ")
-                item_type = "lost" if t == "1" else "found"
-                results = [item for item in controller.items if item['item_type'] == item_type]
-                if results:
-                    print(f"\n--- {item_type.capitalize()} Items ---")
-                    for item in results:
-                        print(f"Item ID: {item['item_id']}, Name: {item['name']}, Location: {item['location']}, Status: {item['status']}")
-                else:
-                    print(f"No {item_type} items found.")
-
-        elif choice == "4":
-            # Claim an item
-            item_id = input("Enter Item ID to claim: ")
-            claim_id = controller.claim_item(user["id"], item_id)
-            print(f"Claim submitted. Claim ID: {claim_id}")
-
-        elif choice == "5":
-            # Logout
-            break
+                    print("Invalid credentials.")
+            elif choice == "2":
+                break
 
 
-def admin_menu(admin):
-    """Menu for admins"""
-    while True:
-        print("\n--- Admin Menu ---")
-        print("1. Approve Claim")
-        print("2. Logout")
-        choice = input("Choose an option: ")
 
-        if choice == "1":
-            claim_id = input("Enter Claim ID: ")
-            if controller.approve_claim(claim_id):
-                print("Claim approved.")
-            else:
-                print("Claim not found.")
-        elif choice == "2":
-            break
+
+
+
 
 
 def main():
-    """Main menu for login and exit"""
-    while True:
-        print("\n--- DLFS Main Menu ---")
-        print("1. Login")
-        print("2. Exit")
-        choice = input("Choose an option: ")
-
-        if choice == "1":
-            email = input("Email: ")
-            password = input("Password: ")
-            user = controller.login(email, password)
-            if user:
-                # Show menu based on role
-                if user["role"] == "admin":
-                    admin_menu(user)
-                else:
-                    user_menu(user)
-            else:
-                print("Invalid credentials.")
-        elif choice == "2":
-            break
+##MAIN MENU##
 
 
 if __name__ == "__main__":
