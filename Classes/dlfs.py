@@ -124,11 +124,11 @@ class DLFSController:
     
     def search_items_location(self, location):
         """Search items by location"""
-        return [item for item in controller.items if location.lower() in item['location'].lower()]
+        return [item for item in self.items if location.lower() in item['location'].lower()]
     
     def search_items_type(self, item_description):
         """Search items by item type (lost or found)""" 
-        return [item for item in controller.items if item_description() in item['item_description'].lower()]
+        return [item for item in self.items if item_description() in item['item_description'].lower()]
 
     def claim_item(self, user_id, item_id):
         """Submit a claim for a found item"""
@@ -152,12 +152,11 @@ class DLFSController:
 
 
 # === Menus ===
-controller = DLFSController()
 
 class DLFSUI:
     """User Interface for the DLFS system"""
     def __init__(self, controller):
-        self.controller = controller
+        self.controller = DLFSController()
     
     def print_items(self, results):
         """Helper function to print a list of items"""
@@ -186,7 +185,7 @@ class DLFSUI:
                 name = input("Item name: ")
                 desc = input("Description: ")
                 loc = input("Location: ")
-                item_id = controller.report_item(name, desc, loc, "lost", user["id"])
+                item_id = self.controller.report_item(name, desc, loc, "lost", user["id"])
                 print(f"Lost item reported. Item ID: {item_id}")
 
             elif choice == "2":
@@ -194,7 +193,7 @@ class DLFSUI:
                 name = input("Item name: ")
                 desc = input("Description: ")
                 loc = input("Location: ")
-                item_id = controller.report_item(name, desc, loc, "found", user["id"])
+                item_id = self.controller.report_item(name, desc, loc, "found", user["id"])
                 print(f"Found item reported. Item ID: {item_id}")
 
             elif choice == "3":
@@ -208,22 +207,22 @@ class DLFSUI:
 
                 if sub_choice == "1":
                     # View all items
-                    if controller.items:
+                    if self.controller.items:
                         print("\n--- All Items ---")
-                        self.print_items(controller.items)                    
+                        self.print_items(self.controller.items)                    
                     else:
                         print("No items in the system.")
 
                 elif sub_choice == "2":
                     # Search by keyword
                     keyword = input("Enter keyword: ")
-                    results = controller.search_items_name(keyword)
+                    results = self.controller.search_items_name(keyword)
                     print("\n--- Search Results ---")
                     
                 elif sub_choice == "3":
                     # Search by location
                     location = input("Enter location: ")
-                    results = controller.search_items_location(location)
+                    results = self.controller.search_items_location(location)
                     self.print_items(results)
 
                 elif sub_choice == "4":
@@ -231,13 +230,13 @@ class DLFSUI:
                     print("Choose type: 1 for Lost, 2 for Found")
                     t = input("Enter choice: ")
                     item_type = "lost" if t == "1" else "found"
-                    results = controller.search_items_type(item_type)
+                    results = self.controller.search_items_type(item_type)
                     self.print_items(results)
 
             elif choice == "4":
                 # Claim an item
                 item_id = input("Enter Item ID to claim: ")
-                claim_id = controller.claim_item(user["id"], item_id)
+                claim_id = self.controller.claim_item(user["id"], item_id)
                 print(f"Claim submitted. Claim ID: {claim_id}")
 
             elif choice == "5":
@@ -248,7 +247,7 @@ class DLFSUI:
 
 
 
-    def admin_menu(admin):
+    def admin_menu(self, admin):
         """Menu for admins"""
         while True:
             print("\n--- Admin Menu ---")
@@ -258,7 +257,7 @@ class DLFSUI:
 
             if choice == "1":
                 claim_id = input("Enter Claim ID: ")
-                if controller.approve_claim(claim_id):
+                if self.controller.approve_claim(claim_id):
                     print("Claim approved.")
                 else:
                     print("Claim not found.")
@@ -267,7 +266,7 @@ class DLFSUI:
 
 
 
-            
+
     def main_menu(self):
         """Main menu for login and exit"""
         while True:
@@ -279,7 +278,7 @@ class DLFSUI:
             if choice == "1":
                 email = input("Email: ")
                 password = input("Password: ")
-                user = controller.login(email, password)
+                user = self.controller.login(email, password)
                 if user:
                     # Show menu based on role
                     if user["role"] == "admin":
@@ -300,7 +299,7 @@ class DLFSUI:
 
 def main():
 ##MAIN MENU##
-
+    DLFSUI().main_menu()
 
 if __name__ == "__main__":
     main()
