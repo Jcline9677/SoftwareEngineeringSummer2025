@@ -23,6 +23,12 @@ for file in ["users.json", "items.json", "claims.json"]:
                     "email": "admin@dlfs.com",
                     "password": "admin123",
                     "role": "admin"
+                },{
+                    "id": 2,
+                    "name": "User",
+                    "email": "User@dlfs.com",
+                    "password": "user123",
+                    "role": "user"
                 }], f, indent=4)
             else:
                 # Initialize empty list for items.json and claims.json
@@ -62,6 +68,12 @@ class Admin(User):
     """Represents an admin user (inherits from User)"""
     def __init__(self, user_id, name, email, password):
         super().__init__(user_id, name, email, password, role="admin")
+        def add_user(self, user_id, name, email, password, role):
+        """Add a new user to the system"""
+        new_user = User(user_id, name, email, password, role)
+        users = load_data("users.json")
+        users.append(new_user.__dict__)
+        save_data("users.json", users)
 
 
 class ReportedItem:
@@ -105,8 +117,9 @@ class DLFSController:
     def login(self, email, password):
         """Authenticate user by email and password"""
         for user in self.users:
-            if user["email"] == email and user["password"] == password:
-                return user  # Return user dictionary if credentials match
+            if "email" in user and "password" in user:
+                if user["email"] == email and user["password"] == password:
+                    return user  # Return user dictionary if credentials match
         return None
 
     def report_item(self, name, description, location, item_type, user_id):
@@ -125,10 +138,11 @@ class DLFSController:
     def search_items_location(self, location):
         """Search items by location"""
         return [item for item in self.items if location.lower() in item['location'].lower()]
-    
-    def search_items_type(self, item_description):
+
+    def search_items_type(self, item_type):
         """Search items by item type (lost or found)""" 
-        return [item for item in self.items if item_description() in item['item_description'].lower()]
+        return [item for item in self.items if item_type.lower() in item['item_type'].lower()]
+
 
     def claim_item(self, user_id, item_id):
         """Submit a claim for a found item"""
@@ -217,7 +231,7 @@ class DLFSUI:
                     # Search by keyword
                     keyword = input("Enter keyword: ")
                     results = self.controller.search_items_name(keyword)
-                    print("\n--- Search Results ---")
+                    self.print_items(results)
                     
                 elif sub_choice == "3":
                     # Search by location
@@ -232,6 +246,7 @@ class DLFSUI:
                     item_type = "lost" if t == "1" else "found"
                     results = self.controller.search_items_type(item_type)
                     self.print_items(results)
+
 
             elif choice == "4":
                 # Claim an item
@@ -252,7 +267,8 @@ class DLFSUI:
         while True:
             print("\n--- Admin Menu ---")
             print("1. Approve Claim")
-            print("2. Logout")
+            print("2. Add user")
+            print("3. Logout")
             choice = input("Choose an option: ")
 
             if choice == "1":
@@ -262,6 +278,17 @@ class DLFSUI:
                 else:
                     print("Claim not found.")
             elif choice == "2":
+                # Add a new user
+                name = input("Name: ")
+                email = input("Email: ")
+                password = input("Password: ")
+                role = input("Role (user/admin): ").lower()
+                if role not in ["user", "admin"]:
+                    print("Invalid role. Defaulting to user.")
+                    role = "user"
+                admin.add_user(name, email, password, role)
+                print(f"User {name} added with role {role}.")
+            elif choice == "3":
                 break
 
 
@@ -299,7 +326,9 @@ class DLFSUI:
 
 def main():
 ##MAIN MENU##
-    DLFSUI().main_menu()
+    UI = DLFSUI(DLFSController())
+    UI.main_menu()
+
 
 if __name__ == "__main__":
     main()
