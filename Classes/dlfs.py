@@ -68,12 +68,7 @@ class Admin(User):
     """Represents an admin user (inherits from User)"""
     def __init__(self, user_id, name, email, password):
         super().__init__(user_id, name, email, password, role="admin")
-        def add_user(self, user_id, name, email, password, role):
-        """Add a new user to the system"""
-        new_user = User(user_id, name, email, password, role)
-        users = load_data("users.json")
-        users.append(new_user.__dict__)
-        save_data("users.json", users)
+
 
 
 class ReportedItem:
@@ -100,6 +95,9 @@ class Claim:
 
 
 # === Controller ===
+
+### Manages all interactions with users, items, and claims ###
+
 class DLFSController:
     """Main controller to manage users, items, and claims"""
     def __init__(self):
@@ -121,6 +119,15 @@ class DLFSController:
                 if user["email"] == email and user["password"] == password:
                     return user  # Return user dictionary if credentials match
         return None
+
+    def add_user(self, user_id, name, email, password, role):
+        """Add a new user to the system"""
+        new_user = User(user_id, name, email, password, role)
+        users = load_data("users.json")
+        users.append(new_user.__dict__)
+        save_data("users.json", users)
+        self.users = load_data("users.json")
+
 
     def report_item(self, name, description, location, item_type, user_id):
         """Create and store a new reported item"""
@@ -181,7 +188,64 @@ class DLFSUI:
         else:
             print("No items found matching this search.")
        
-            
+    def report_lost_item(self, user):
+        # Report lost item
+        name = input("Item name: ")
+        desc = input("Description: ")
+        loc = input("Location: ")
+        item_id = self.controller.report_item(name, desc, loc, "lost", user["id"])
+        print(f"Lost item reported. Item ID: {item_id}")
+
+    def report_found_item(self, user):
+        # Report found item
+        name = input("Item name: ")
+        desc = input("Description: ")
+        loc = input("Location: ")
+        item_id = self.controller.report_item(name, desc, loc, "found", user["id"])
+        print(f"Found item reported. Item ID: {item_id}")
+
+    def search_menu(self):
+        # Search menu options
+        print("\n--- Search Menu ---")
+        print("1. View All Items")
+        print("2. Search by Keyword")
+        print("3. Search by Location")
+        print("4. Search by Item Type")
+        return(input("Choose an option: "))
+
+    def view_all_items(self):
+                            # View all items
+        if self.controller.items:
+            print("\n--- All Items ---")
+            self.print_items(self.controller.items)                    
+        else:
+            print("No items in the system.")
+
+    def search_by_keyword(self):
+                        # Search by keyword
+        keyword = input("Enter keyword: ")
+        results = self.controller.search_items_name(keyword)
+        self.print_items(results)
+
+    def search_by_location(self):
+                            # Search by location
+        location = input("Enter location: ")
+        results = self.controller.search_items_location(location)
+        self.print_items(results)
+
+    def search_by_type(self):
+                    # Search by item type (lost or found)
+        print("Choose type: 1 for Lost, 2 for Found")
+        t = input("Enter choice: ")
+        item_type = "lost" if t == "1" else "found"
+        results = self.controller.search_items_type(item_type)
+        self.print_items(results)
+
+    def claim_item(self, user):
+                        # Claim an item
+        item_id = input("Enter Item ID to claim: ")
+        claim_id = self.controller.claim_item(user["id"], item_id)
+        print(f"Claim submitted. Claim ID: {claim_id}")
 
     def user_menu(self,user):
         """Menu for regular users"""
@@ -193,73 +257,60 @@ class DLFSUI:
             print("4. Claim an Item")
             print("5. Logout")
             choice = input("Choose an option: ")
+    
 
             if choice == "1":
-                # Report lost item
-                name = input("Item name: ")
-                desc = input("Description: ")
-                loc = input("Location: ")
-                item_id = self.controller.report_item(name, desc, loc, "lost", user["id"])
-                print(f"Lost item reported. Item ID: {item_id}")
+                self.report_lost_item(user)
 
             elif choice == "2":
-                # Report found item
-                name = input("Item name: ")
-                desc = input("Description: ")
-                loc = input("Location: ")
-                item_id = self.controller.report_item(name, desc, loc, "found", user["id"])
-                print(f"Found item reported. Item ID: {item_id}")
+                self.report_found_item(user)
 
             elif choice == "3":
-                # Search menu options
-                print("\n--- Search Menu ---")
-                print("1. View All Items")
-                print("2. Search by Keyword")
-                print("3. Search by Location")
-                print("4. Search by Item Type")
-                sub_choice = input("Choose an option: ")
+                sub_choice = self.search_menu()
 
                 if sub_choice == "1":
-                    # View all items
-                    if self.controller.items:
-                        print("\n--- All Items ---")
-                        self.print_items(self.controller.items)                    
-                    else:
-                        print("No items in the system.")
+                    self.view_all_items()
 
                 elif sub_choice == "2":
-                    # Search by keyword
-                    keyword = input("Enter keyword: ")
-                    results = self.controller.search_items_name(keyword)
-                    self.print_items(results)
+                    self.search_by_keyword()
                     
                 elif sub_choice == "3":
-                    # Search by location
-                    location = input("Enter location: ")
-                    results = self.controller.search_items_location(location)
-                    self.print_items(results)
+                    self.search_by_location()
 
                 elif sub_choice == "4":
-                    # Search by item type (lost or found)
-                    print("Choose type: 1 for Lost, 2 for Found")
-                    t = input("Enter choice: ")
-                    item_type = "lost" if t == "1" else "found"
-                    results = self.controller.search_items_type(item_type)
-                    self.print_items(results)
+                    self.search_by_type()
+
+                else:
+                    print("Invalid choice. Please try again.")
 
 
             elif choice == "4":
-                # Claim an item
-                item_id = input("Enter Item ID to claim: ")
-                claim_id = self.controller.claim_item(user["id"], item_id)
-                print(f"Claim submitted. Claim ID: {claim_id}")
+                self.claim_item(user)
 
             elif choice == "5":
                 # Logout
                 break
 
 
+    def approve_claim(self):
+        claim_id = input("Enter Claim ID: ")
+        if self.controller.approve_claim(claim_id):
+            print("Claim approved.")
+        else:
+            print("Claim not found.")
 
+    def add_user(self):
+         # Add a new user
+        id = input("User ID (numeric): ")
+        name = input("Name: ")
+        email = input("Email: ")
+        password = input("Password: ")
+        role = input("Role (user/admin): ").lower()
+        if role not in ["user", "admin"]:
+            print("Invalid role. Defaulting to user.")
+            role = "user"
+        self.controller.add_user(id, name, email, password, role)
+        print(f"User {name} added with role {role}.")
 
 
     def admin_menu(self, admin):
@@ -272,22 +323,9 @@ class DLFSUI:
             choice = input("Choose an option: ")
 
             if choice == "1":
-                claim_id = input("Enter Claim ID: ")
-                if self.controller.approve_claim(claim_id):
-                    print("Claim approved.")
-                else:
-                    print("Claim not found.")
+                self.approve_claim()
             elif choice == "2":
-                # Add a new user
-                name = input("Name: ")
-                email = input("Email: ")
-                password = input("Password: ")
-                role = input("Role (user/admin): ").lower()
-                if role not in ["user", "admin"]:
-                    print("Invalid role. Defaulting to user.")
-                    role = "user"
-                admin.add_user(name, email, password, role)
-                print(f"User {name} added with role {role}.")
+               self.add_user()
             elif choice == "3":
                 break
 
