@@ -53,7 +53,11 @@ def save_data(file_name, data):
         json.dump(data, file, indent=4)
 
 
-# === Classes ===
+### CLASSES TO DEFINE USERS, ITEMS, AND CLAIMS ###
+'''
+Contains classes to represent users, items, and claims in the DLFS system
+
+'''
 class User:
     """Represents a user in the system"""
     def __init__(self, user_id, name, email, password, role="user"):
@@ -117,7 +121,9 @@ class DLFSController:
         for user in self.users:
             if "email" in user and "password" in user:
                 if user["email"] == email and user["password"] == password:
+                    print("Login successful")
                     return user  # Return user dictionary if credentials match
+        print("Invalid email or password.")
         return None
 
     def add_user(self, user_id, name, email, password, role):
@@ -172,7 +178,11 @@ class DLFSController:
         return False
 
 
-# === Menus ===
+# MENUS #
+'''
+Contains all menu functions for user and admin interactions with the user interface
+
+'''
 
 class DLFSUI:
     """User Interface for the DLFS system"""
@@ -204,6 +214,19 @@ class DLFSUI:
         item_id = self.controller.report_item(name, desc, loc, "found", user["id"])
         print(f"Found item reported. Item ID: {item_id}")
 
+
+    def claim_item(self, user, item_id=None):
+                        # Claim an item
+        if item_id is None:
+            item_id = input("Enter Item ID to claim: ")
+        else:
+            claim_id = self.controller.claim_item(user["id"], item_id)
+            print(f"Claim submitted. Claim ID: {claim_id}")
+
+
+
+### SEARCH MENU FUNCTIONS ###
+
     def search_menu(self):
         # Search menu options
         print("\n--- Search Menu ---")
@@ -221,31 +244,36 @@ class DLFSUI:
         else:
             print("No items in the system.")
 
-    def search_by_keyword(self):
+    def search_by_keyword(self, keyword=None):
                         # Search by keyword
-        keyword = input("Enter keyword: ")
-        results = self.controller.search_items_name(keyword)
-        self.print_items(results)
+        if keyword == None:              
+            keyword = input("Enter keyword: ")
+        else:
+            results = self.controller.search_items_name(keyword)
+            self.print_items(results)
 
-    def search_by_location(self):
+    def search_by_location(self, location=None):
                             # Search by location
-        location = input("Enter location: ")
-        results = self.controller.search_items_location(location)
-        self.print_items(results)
+        if location == None:
+            location = input("Enter location: ")
+        else:
+            results = self.controller.search_items_location(location)
+            self.print_items(results)
 
-    def search_by_type(self):
+    def search_by_type(self, t=None):
                     # Search by item type (lost or found)
-        print("Choose type: 1 for Lost, 2 for Found")
-        t = input("Enter choice: ")
-        item_type = "lost" if t == "1" else "found"
-        results = self.controller.search_items_type(item_type)
-        self.print_items(results)
+        if t == None:
+            print("Choose type: 1 for Lost, 2 for Found")
+            t = input("Enter choice: ")
+        else:
+            item_type = "lost" if t == "1" else "found"
+            results = self.controller.search_items_type(item_type)
+            self.print_items(results)
 
-    def claim_item(self, user):
-                        # Claim an item
-        item_id = input("Enter Item ID to claim: ")
-        claim_id = self.controller.claim_item(user["id"], item_id)
-        print(f"Claim submitted. Claim ID: {claim_id}")
+
+
+
+### MENU FOR USERS ###
 
     def user_menu(self,user):
         """Menu for regular users"""
@@ -291,6 +319,7 @@ class DLFSUI:
                 # Logout
                 break
 
+### MENU FUNCTIONS FOR ADMINS ###
 
     def approve_claim(self):
         claim_id = input("Enter Claim ID: ")
@@ -300,7 +329,6 @@ class DLFSUI:
             print("Claim not found.")
 
     def add_user(self):
-         # Add a new user
         id = input("User ID (numeric): ")
         name = input("Name: ")
         email = input("Email: ")
@@ -309,9 +337,10 @@ class DLFSUI:
         if role not in ["user", "admin"]:
             print("Invalid role. Defaulting to user.")
             role = "user"
+        # Add user through controller    
         self.controller.add_user(id, name, email, password, role)
-        print(f"User {name} added with role {role}.")
 
+### MENU FOR ADMINS ###
 
     def admin_menu(self, admin):
         """Menu for admins"""
@@ -356,6 +385,72 @@ class DLFSUI:
                 break
 
 
+class TestSystem:
+    """Test class for the DLFS system"""
+    def __init__(self, controller, ui, user, admin):
+        self.controller = DLFSController()
+        self.ui = DLFSUI(controller)
+        self.user = user
+        self.admin = admin
+
+    def test_login(self):
+        self.controller.login(self.user["email"], self.user["password"])
+        self.controller.login(self.admin["email"], self.admin["password"])
+        self.controller.login(self.user["email"], "wrongpassword")
+        self.controller.login(self.admin["email"], "wrongpassword")
+
+    def test_print_items(self):
+        self.controller.report_item("TestItem", "A test item", "TestLocation", "lost", self.user["id"])
+        self.ui.print_items(self.controller.items)
+
+    
+    def test_report_lost_item(self):
+        self.controller.report_item("LostItem", "A lost item", "LostLocation", "lost", self.user["id"])
+
+    def test_report_found_item(self):
+        self.controller.report_item("FoundItem", "A found item", "FoundLocation", "found", self.user["id"])
+
+    def test_view_all_items(self):
+        print("\n[Test] View All Items:")
+        self.ui.view_all_items()
+
+    def test_search_by_keyword(self):
+        print("\n[Test] Search by Keyword:")
+        # Add a test item
+        self.controller.report_item("TestItem", "A test item", "TestLocation", "lost", self.user["id"])
+        self.ui.search_by_keyword("TestItem")
+
+    def test_search_by_location(self):
+        print("\n[Test] Search by Location:")
+        # Add a test item
+        self.controller.report_item("TestItem2", "Another test item", "SpecialLocation", "found", self.user["id"])
+        self.ui.search_by_location("SpecialLocation")
+
+    def test_search_by_type(self):
+        print("\n[Test] Search by Type:")
+        # Add a test item
+        self.controller.report_item("TestItem3", "Type test item", "TypeLocation", "lost", self.user["id"])
+        self.ui.search_by_type("1")  # '1' for lost
+
+    def run_all_login_tests(self):
+        self.test_login()
+
+    def run_all_item_tests(self):
+        self.test_report_found_item()
+        self.test_report_lost_item()
+
+    def run_all_ui_tests(self):
+        self.test_print_items()
+        self.test_view_all_items()
+        self.test_search_by_keyword()
+        self.test_search_by_location()
+        self.test_search_by_type()
+        print("\nAll UI tests completed successfully.")
+
+    def run_all_tests(self):
+        self.run_all_login_tests()
+        self.run_all_item_tests()
+        self.run_all_ui_tests()
 
 
 
